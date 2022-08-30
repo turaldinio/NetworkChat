@@ -3,9 +3,10 @@ package client;
 import sharedResources.Connection;
 import sharedResources.Message;
 import sharedResources.MessageType;
+import sharedResources.SettingReader;
 
 import java.io.IOException;
-import java.util.Scanner;
+import java.net.Socket;
 
 public class Client {
     protected Connection connection;
@@ -17,6 +18,19 @@ public class Client {
     }
 
     public class SocketThread extends Thread {
+        @Override
+        public void run() {
+            try {
+                Socket socket = new Socket(SettingReader.readStringKey("host"), SettingReader.readIntKey("port"));
+                connection = new Connection(socket);
+                clientHandshake();
+                clientMainLoop();
+
+            } catch (IOException e) {
+                notifyConnectionStatusChanged(false);
+            }
+        }
+
         protected void processIncomingMessage(String message) {
             System.out.println(message);
         }
@@ -47,7 +61,7 @@ public class Client {
                         break;
                     case NAME_ACCEPTED:
                         notifyConnectionStatusChanged(true);
-                        break;
+                        return;
                 }
 
             }
@@ -66,8 +80,6 @@ public class Client {
                     case USER_REMOVED:
                         informAboutDeletingNewUser(message.getText());
                         break;
-                    default:
-                        throw new IOException("informAboutAddingNewUser");
                 }
             }
         }
@@ -86,7 +98,7 @@ public class Client {
             }
         }
         if (clientConnected) {
-            System.out.println("Соединение установлено\n Для выхода введите eixt");
+            System.out.println("Соединение установлено\nДля выхода введите eixt");
         } else {
             System.out.println("произошла ошибка в работе потока SocketThread->run");
         }
@@ -101,8 +113,9 @@ public class Client {
     }
 
     protected String getClientName() {
-        Scanner scan = new Scanner(System.in);
-        return scan.nextLine();
+        System.out.println("Введите имя клиента");
+
+        return ClientTextReader.readLine();
     }
 
     protected SocketThread getSocketThread() {

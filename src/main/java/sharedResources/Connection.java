@@ -16,23 +16,28 @@ public class Connection implements Closeable {
         this.socket = socket;
         try {
             this.out = new ObjectOutputStream(socket.getOutputStream());
+            out.flush();
             this.in = new ObjectInputStream(socket.getInputStream());
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public synchronized void send(Message message) {
+    public void send(Message message) {
         try {
-            out.writeObject(message);
+            synchronized (out) {
+                out.writeObject(message);
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public synchronized Message receive() {
+    public Message receive() {
         try {
-            return (Message) in.readObject();
+            synchronized (in) {
+                return (Message) in.readObject();
+            }
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
@@ -48,5 +53,6 @@ public class Connection implements Closeable {
     public void close() throws IOException {
         out.close();
         in.close();
+        socket.close();
     }
 }

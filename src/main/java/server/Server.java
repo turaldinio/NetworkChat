@@ -1,5 +1,10 @@
 package server;
 
+import sharedResources.Connection;
+import sharedResources.Message;
+import sharedResources.MessageType;
+import sharedResources.SettingReader;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -11,7 +16,7 @@ public class Server {
 
     public static void main(String[] args) {
         try {
-            ServerSocket server = new ServerSocket(ServerSettingReader.readIntKey("port"));
+            ServerSocket server = new ServerSocket(SettingReader.readIntKey("port"));
             System.out.println("Сервер запущен");
 
             while (true) {
@@ -46,6 +51,7 @@ public class Server {
                 serverMainLoop(connection, newUserName);
             } catch (Exception e) {
                 System.out.println("ошибка в методе Handler->run");
+                return;
             }
             map.remove(newUserName);
             System.out.println("Соединение с " + newUserName + " закрыто");
@@ -74,9 +80,8 @@ public class Server {
 
         private void sendListOfUsers(Connection connection, String userName) {
             for (Map.Entry<String, Connection> pairs : map.entrySet()) {
-                String oldClientMane = pairs.getValue().receive().getText();
-                if (!oldClientMane.equals(userName)) {
-                    connection.send(new Message(oldClientMane, MessageType.USER_ADDED));
+                if (!pairs.getKey().equals(userName)) {
+                    connection.send(new Message(pairs.getKey(), MessageType.USER_ADDED));
                 }
             }
         }
@@ -84,11 +89,15 @@ public class Server {
         private void serverMainLoop(Connection connection, String userName) {
             while (true) {
                 Message message = connection.receive();
+                if (message == null) {
+                    return;
+                }
                 if (message.getMessageType() == MessageType.TEXT) {
                     String newMessage = userName + " : " + message.getText();
                     sendMessageToEveryOne(new Message(newMessage, MessageType.TEXT));
                 } else {
                     System.out.println("Ошибка, сообщение не является текстом");
+                    return;
                 }
             }
         }

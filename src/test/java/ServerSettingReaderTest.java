@@ -1,16 +1,16 @@
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import server.ServerSettingReader;
+import sharedResources.SettingReader;
 
 
 class ServerSettingReaderTest {
 
     @Test
     void readStringAndIntegerKey() {
-        String host = ServerSettingReader.readStringKey("host");
+        String host = SettingReader.readStringKey("host");
         Assertions.assertNotNull(host);
 
-        int port = ServerSettingReader.readIntKey("port");
+        int port = SettingReader.readIntKey("port");
         Assertions.assertNotEquals(0,port);
 
     }
