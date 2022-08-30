@@ -33,7 +33,20 @@ public class Server {
 
         @Override
         public void run() {
+            Connection connection = new Connection(socket);
+            System.out.println("Установлено соединение " + connection.getRemoteSocketAddress());
+            String newUserName = serverHandshake(connection);
+            try {
 
+                sendMessageToEveryOne(new Message(newUserName, MessageType.USER_ADDED));
+                sendListOfUsers(connection, newUserName);
+
+                serverMainLoop(connection, newUserName);
+            } catch (Exception e) {
+                System.out.println("ошибка в методе Handler->run");
+            }
+            map.remove(newUserName);
+            System.out.println("Соединение с " + newUserName + " закрыто");
 
         }
 
