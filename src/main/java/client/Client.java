@@ -4,6 +4,7 @@ import sharedResources.Connection;
 import sharedResources.Message;
 import sharedResources.MessageType;
 
+import java.io.IOException;
 import java.util.Scanner;
 
 public class Client {
@@ -33,6 +34,41 @@ public class Client {
             Client.this.clientConnected = clientConnected;
             synchronized (Client.this) {
                 Client.this.notify();
+            }
+        }
+
+        protected void clientHandshake() {
+            while (true) {
+                Message message = connection.receive();
+                switch (message.getMessageType()) {
+                    case NAME_REQUEST:
+                        String userName = getClientName();
+                        connection.send(new Message(userName, MessageType.USER_NAME));
+                        break;
+                    case NAME_ACCEPTED:
+                        notifyConnectionStatusChanged(true);
+                        break;
+                }
+
+            }
+        }
+
+        private void clientMainLoop() throws IOException {
+            while (true) {
+                Message message = connection.receive();
+                switch (message.getMessageType()) {
+                    case TEXT:
+                        processIncomingMessage(message.getText());
+                        break;
+                    case USER_ADDED:
+                        informAboutAddingNewUser(message.getText());
+                        break;
+                    case USER_REMOVED:
+                        informAboutDeletingNewUser(message.getText());
+                        break;
+                    default:
+                        throw new IOException("informAboutAddingNewUser");
+                }
             }
         }
 
