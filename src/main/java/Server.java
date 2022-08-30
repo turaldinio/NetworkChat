@@ -37,10 +37,28 @@ public class Server {
 
         }
 
+        private String serverHandshake(Connection connection) {
+            while (true) {
+                connection.send(new Message(MessageType.NAME_REQUEST));
 
-    }
+                Message response = connection.receive();
 
-    public static void sendMessageToEveryOne(Message message) {
-        map.values().forEach(x -> x.send(message));
+                if (response.getMessageType() == MessageType.USER_NAME && response.getText() != null && !map.containsKey(response.getText())) {
+
+                    map.put(response.getText(), connection);
+
+                    connection.send(new Message(MessageType.NAME_ACCEPTED));
+                    return response.getText();
+                }
+
+
+            }
+
+
+        }
+
+        public static void sendMessageToEveryOne(Message message) {
+            map.values().forEach(x -> x.send(message));
+        }
     }
 }
