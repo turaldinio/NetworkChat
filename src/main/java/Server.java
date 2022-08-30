@@ -1,8 +1,12 @@
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Server {
+    private static Map<String, Connection> map = new ConcurrentHashMap<>();
+
     public static void main(String[] args) {
         try {
             ServerSocket server = new ServerSocket(ServerSettingReader.readIntKey("port"));
@@ -33,5 +37,10 @@ public class Server {
 
         }
 
+
+    }
+
+    public static void sendMessageToEveryOne(Message message) {
+        map.values().forEach(x -> x.send(message));
     }
 }
