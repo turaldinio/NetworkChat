@@ -57,8 +57,18 @@ public class Server {
 
         }
 
-        public static void sendMessageToEveryOne(Message message) {
-            map.values().forEach(x -> x.send(message));
+        private void sendListOfUsers(Connection connection, String userName) {
+            for (Map.Entry<String, Connection> pairs : map.entrySet()) {
+                String oldClientMane = pairs.getValue().receive().getText();
+                if (!oldClientMane.equals(userName)) {
+                    connection.send(new Message(oldClientMane, MessageType.USER_ADDED));
+                }
+            }
         }
+
+    }
+
+    public static void sendMessageToEveryOne(Message message) {
+        map.values().forEach(x -> x.send(message));
     }
 }

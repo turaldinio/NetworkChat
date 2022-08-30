@@ -3,6 +3,6 @@ public enum MessageType {
     USER_NAME,
     NAME_ACCEPTED,
     TEXT,
-    USEr_ADDED,
+    USER_ADDED,
     USER_REMOVED
 }
