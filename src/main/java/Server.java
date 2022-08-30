@@ -66,6 +66,18 @@ public class Server {
             }
         }
 
+        private void serverMainLoop(Connection connection, String userName) {
+            while (true) {
+                Message message = connection.receive();
+                if (message.getMessageType() == MessageType.TEXT) {
+                    String newMessage = userName + " : " + message.getText();
+                    sendMessageToEveryOne(new Message(newMessage, MessageType.TEXT));
+                } else {
+                    System.out.println("Ошибка, сообщение не является текстом");
+                }
+            }
+        }
+
     }
 
     public static void sendMessageToEveryOne(Message message) {
