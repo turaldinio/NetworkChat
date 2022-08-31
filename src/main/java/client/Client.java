@@ -1,9 +1,6 @@
 package client;
 
-import sharedResources.Connection;
-import sharedResources.Message;
-import sharedResources.MessageType;
-import sharedResources.SettingReader;
+import sharedResources.*;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -44,11 +41,11 @@ public class Client {
         }
 
         protected void informAboutAddingNewUser(String userName) {
-            System.out.println("Участник " + userName + " " + "присоединился к чату");
+            Logger.log("CLIENT: Участник " + userName + " " + "присоединился к чату", "INFO");
         }
 
         protected void informAboutDeletingNewUser(String userName) {
-            System.out.println("Участник " + userName + " " + "покинул чат");
+            Logger.log("CLIENT: Участник " + userName + " " + "покинул чат", "INFO");
 
         }
 
@@ -106,9 +103,11 @@ public class Client {
             }
         }
         if (clientConnected) {
-            System.out.println("Соединение установлено\nДля выхода введите exit");
+            Logger.log("CLIENT: Соединение установлено Для выхода введите exit", "INFO");
+
         } else {
-            System.out.println("произошла ошибка в работе потока SocketThread->run");
+            Logger.log("CLIENT: произошла ошибка в работе потока SocketThread->run", "ERROR");
+
         }
         while (clientConnected) {
             String line = ClientTextReader.readLine();

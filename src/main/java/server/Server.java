@@ -1,9 +1,6 @@
 package server;
 
-import sharedResources.Connection;
-import sharedResources.Message;
-import sharedResources.MessageType;
-import sharedResources.SettingReader;
+import sharedResources.*;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -12,9 +9,10 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Server {
-    private static Map<String, Connection> connectionMap = new ConcurrentHashMap<>();
+    private static final Map<String, Connection> connectionMap = new ConcurrentHashMap<>();
 
     public static void main(String[] args) throws IOException {
+        Logger.clearTheFile();
 
         try (ServerSocket serverSocket = new ServerSocket(SettingReader.readIntKey("port"))) {
 
@@ -23,6 +21,7 @@ public class Server {
                 //Listen
                 Socket socket = null;
                 try {
+
                     socket = serverSocket.accept();
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -42,7 +41,7 @@ public class Server {
             try {
                 x.send(message);
             } catch (IOException e) {
-                e.printStackTrace();
+                Logger.log("SERVER: Ошибка отправки сообщения. Server->sendBroadcastMessage", "ERROR");
             }
         });
     }
@@ -53,30 +52,28 @@ public class Server {
         @Override
         public void run() {
             super.run();
+            Logger.log("SERVER: Установленно соединение с адресом " + socket.getRemoteSocketAddress(), "INFO");
 
-            System.out.println("Установленно соединение с адресом " + socket.getRemoteSocketAddress());
             String userName = null;
 
             try (Connection connection = new Connection(socket)) {
-                System.out.println("Подключение к порту: " + connection.getRemoteSocketAddress());
+                Logger.log("SERVER: Подключение к порту " + connection.getRemoteSocketAddress(), "INFO");
+
                 userName = serverHandshake(connection);
 
                 sendBroadcastMessage(new Message(userName, MessageType.USER_ADDED));
                 sendListOfUsers(connection, userName);
                 serverMainLoop(connection, userName);
 
-            } catch (IOException e) {
-                System.out.println("Ошибка при обмене данными с удаленным адресом");
-            } catch (ClassNotFoundException e) {
-                System.out.println("Ошибка при обмене данными с удаленным адресом");
-                e.printStackTrace();
+            } catch (IOException | ClassNotFoundException e) {
+                Logger.log("SERVER: Ошибка при обмене данными с удаленным адресом", "ERROR");
             }
 
             if (userName != null) {
                 connectionMap.remove(userName);
                 sendBroadcastMessage(new Message(userName, MessageType.USER_REMOVED));
             }
-            System.out.println("Соединение с удаленным адресом закрыто");
+            Logger.log("SERVER: Соединение с удаленным адресом закрыто", "INFO");
 
 
         }
@@ -114,7 +111,7 @@ public class Server {
                 try {
                     connection.send(new Message(pair.getKey(), MessageType.USER_ADDED));
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    Logger.log("SERVER: Ошибка отправки сообщения sendListOfUsers()", "ERROR");
                 }
             }
 
@@ -131,7 +128,8 @@ public class Server {
                     Message formattedMessage = new Message(s, MessageType.TEXT);
                     sendBroadcastMessage(formattedMessage);
                 } else {
-                    System.out.println("error");
+                    Logger.log("Server: Ошибка принятого сообщения serverMainLoop()", "ERROR");
+
                 }
             }
         }
