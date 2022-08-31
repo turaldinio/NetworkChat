@@ -15,12 +15,17 @@ public class Server {
     private static Map<String, Connection> map = new ConcurrentHashMap<>();
 
     public static void main(String[] args) {
-        try {
-            ServerSocket server = new ServerSocket(SettingReader.readIntKey("port"));
+        try (ServerSocket server = new ServerSocket(SettingReader.readIntKey("port"))) {
             System.out.println("Сервер запущен");
 
             while (true) {
-                Socket client = server.accept();
+                Socket client = null;
+                try {
+                    client = server.accept();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                    break;
+                }
 
                 Handler handler = new Handler(client);
                 handler.start();
@@ -40,25 +45,30 @@ public class Server {
 
         @Override
         public void run() {
-            Connection connection = new Connection(socket);
-            System.out.println("Установлено соединение " + connection.getRemoteSocketAddress());
-            String newUserName = serverHandshake(connection);
-            try {
+            super.run();
+            String newUserName;
 
+            try (Connection connection = new Connection(socket)) {
+                System.out.println("Установлено соединение " + connection.getRemoteSocketAddress());
+                newUserName = serverHandshake(connection);
                 sendMessageToEveryOne(new Message(newUserName, MessageType.USER_ADDED));
                 sendListOfUsers(connection, newUserName);
 
                 serverMainLoop(connection, newUserName);
             } catch (Exception e) {
                 System.out.println("ошибка в методе Handler->run");
+                e.printStackTrace();
                 return;
             }
-            map.remove(newUserName);
+            if (newUserName != null) {
+                map.remove(newUserName);
+                sendMessageToEveryOne(new Message(newUserName, MessageType.USER_REMOVED));
+            }
             System.out.println("Соединение с " + newUserName + " закрыто");
 
         }
 
-        private String serverHandshake(Connection connection) {
+        private String serverHandshake(Connection connection) throws IOException, ClassNotFoundException {
             while (true) {
                 connection.send(new Message(MessageType.NAME_REQUEST));
 
@@ -78,7 +88,7 @@ public class Server {
 
         }
 
-        private void sendListOfUsers(Connection connection, String userName) {
+        private void sendListOfUsers(Connection connection, String userName) throws IOException {
             for (Map.Entry<String, Connection> pairs : map.entrySet()) {
                 if (!pairs.getKey().equals(userName)) {
                     connection.send(new Message(pairs.getKey(), MessageType.USER_ADDED));
@@ -86,12 +96,9 @@ public class Server {
             }
         }
 
-        private void serverMainLoop(Connection connection, String userName) {
+        private void serverMainLoop(Connection connection, String userName) throws IOException, ClassNotFoundException {
             while (true) {
                 Message message = connection.receive();
-                if (message == null) {
-                    return;
-                }
                 if (message.getMessageType() == MessageType.TEXT) {
                     String newMessage = userName + " : " + message.getText();
                     sendMessageToEveryOne(new Message(newMessage, MessageType.TEXT));
@@ -105,6 +112,12 @@ public class Server {
     }
 
     public static void sendMessageToEveryOne(Message message) {
-        map.values().forEach(x -> x.send(message));
+        map.values().forEach(x -> {
+            try {
+                x.send(message);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
     }
 }

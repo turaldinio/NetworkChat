@@ -14,7 +14,11 @@ public class Client {
 
     public static void main(String[] args) {
         Client client = new Client();
-        client.run();
+        try {
+            client.run();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public class SocketThread extends Thread {
@@ -22,12 +26,16 @@ public class Client {
         public void run() {
             try {
                 Socket socket = new Socket(SettingReader.readStringKey("host"), SettingReader.readIntKey("port"));
-                connection = new Connection(socket);
+                Client.this.connection = new Connection(socket);
                 clientHandshake();
                 clientMainLoop();
 
             } catch (IOException e) {
                 notifyConnectionStatusChanged(false);
+            } catch (ClassNotFoundException e) {
+                notifyConnectionStatusChanged(false);
+
+                e.printStackTrace();
             }
         }
 
@@ -51,7 +59,7 @@ public class Client {
             }
         }
 
-        protected void clientHandshake() {
+        protected void clientHandshake() throws IOException, ClassNotFoundException {
             while (true) {
                 Message message = connection.receive();
                 switch (message.getMessageType()) {
@@ -67,7 +75,7 @@ public class Client {
             }
         }
 
-        private void clientMainLoop() throws IOException {
+        private void clientMainLoop() throws IOException, ClassNotFoundException {
             while (true) {
                 Message message = connection.receive();
                 switch (message.getMessageType()) {
@@ -86,7 +94,7 @@ public class Client {
 
     }
 
-    public void run() {
+    public void run() throws IOException {
         SocketThread socketThread = getSocketThread();
         socketThread.setDaemon(true);
         socketThread.start();
@@ -98,7 +106,7 @@ public class Client {
             }
         }
         if (clientConnected) {
-            System.out.println("Соединение установлено\nДля выхода введите eixt");
+            System.out.println("Соединение установлено\nДля выхода введите exit");
         } else {
             System.out.println("произошла ошибка в работе потока SocketThread->run");
         }
@@ -122,7 +130,7 @@ public class Client {
         return new SocketThread();
     }
 
-    protected void sendTextMessage(String text) {
+    protected void sendTextMessage(String text) throws IOException {
         connection.send(new Message(text, MessageType.TEXT));
     }
 
