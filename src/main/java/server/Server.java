@@ -5,6 +5,7 @@ import sharedResources.*;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -12,13 +13,17 @@ public class Server {
     private static final Map<String, Connection> connectionMap = new ConcurrentHashMap<>();
 
     public static void main(String[] args) throws IOException {
+        serverStart();
+
+    }
+
+    public static void serverStart() {
         Logger.clearTheFile();
 
         try (ServerSocket serverSocket = new ServerSocket(SettingReader.readIntKey("port"))) {
 
 
             while (true) {
-                //Listen
                 Socket socket = null;
                 try {
 
@@ -31,6 +36,8 @@ public class Server {
 
                 handler.start();
             }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
 
@@ -64,6 +71,9 @@ public class Server {
                 sendBroadcastMessage(new Message(userName, MessageType.USER_ADDED));
                 sendListOfUsers(connection, userName);
                 serverMainLoop(connection, userName);
+
+            } catch (SocketException s) {
+                Logger.log("SERVER: Пользователь закрыл соединение", "INFO");
 
             } catch (IOException | ClassNotFoundException e) {
                 Logger.log("SERVER: Ошибка при обмене данными с удаленным адресом", "ERROR");
