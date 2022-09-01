@@ -67,6 +67,7 @@ public class Server {
                 Logger.log("SERVER: Подключение к порту " + connection.getRemoteSocketAddress(), "INFO");
 
                 userName = serverHandshake(connection);
+                Logger.log("SERVER: Клиент с именем "+userName+" успешно подключился","INFO");
 
                 sendBroadcastMessage(new Message(userName, MessageType.USER_ADDED));
                 sendListOfUsers(connection, userName);
